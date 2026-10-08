@@ -1,6 +1,5 @@
-// GERADO a partir do código C real da disciplina — texto verbatim, com o nº da linha no arquivo.
-// Não edite à mão: se o repositório mudar, regenere (tools/gen-listings.mjs). Cada linha executável
-// tem um `id` que os passos (linkedListSteps.js) usam para dizer "esta é a linha em execução".
+
+//  Cada linha executável tem um `id` que os passos (linkedListSteps.js) usam para dizer "esta é a linha em execução".
 
 export const SOURCE = {
   repo: 'PauloHARocha/EDL-2026-1',

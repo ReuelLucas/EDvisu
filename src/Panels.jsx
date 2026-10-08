@@ -204,9 +204,6 @@ export function CodePanel({ fn, line }) {
       ) : (
         <p style={{ ...captionStyle, margin: 0 }}>A função aparece aqui quando você executar uma operação.</p>
       )}
-      <p style={captionStyle}>
-        Código do repositório {SOURCE.repo} (commit {SOURCE.commit.slice(0, 7)}), com os números de linha de {SOURCE.file}.
-      </p>
     </section>
   );
 }

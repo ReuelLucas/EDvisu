@@ -1,8 +1,3 @@
-// Modelo da lista unicamente encadeada da disciplina (lista_int.c) + geradores de passos.
-//
-// Na memória há DOIS tipos de objeto, como no código C:
-//   - o descritor `struct lista` { inicio, qtd }, apontado pela variável `li` (tipo Lista);
-//   - os nós `Elem` { valor, prox }, encadeados a partir de `li->inicio`.
 //
 // CONTRATO: cada passo (snapshot) descreve TUDO que a tela desenha naquele instante:
 //   {
@@ -16,9 +11,7 @@
 //     focusEdge:  id da aresta que acabou de ser (re)ligada, ou null
 //     focusField: campo do descritor que acabou de mudar ('inicio' | 'qtd'), ou null
 //   }
-//
-// Hoje os passos são escritos à mão aqui. Quando existir o interpretador de C, ele deve produzir
-// snapshots neste MESMO formato: a interface não muda.
+
 
 export const NULL_ID = 'null';
 export const DESC_ID = 'desc';
