@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { createList, idleSnapshot, runOperation } from './linkedListSteps';
+import { createList, idleSnapshot } from './memoryModel';
 
 const PLAY_INTERVAL_MS = 900;
 
-function makeInitialModel(values) {
-  const list = createList(values);
+function makeInitialModel(structure) {
+  const list = createList(structure.kind, structure.initialValues);
   return { list, steps: [idleSnapshot(list)] };
 }
 
-// Guarda a lista "confirmada" e os passos da operação atual.
+// Guarda a estrutura "confirmada" e os passos da operação atual.
 // Avançar/voltar = mover o índice sobre o array de snapshots (nada é desfeito).
-export function useStepper(initialValues) {
-  const [model, setModel] = useState(() => makeInitialModel(initialValues));
+// `structure` vem de structures/index.js (kind, valores iniciais, operações).
+export function useStepper(structure) {
+  const [model, setModel] = useState(() => makeInitialModel(structure));
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
 
@@ -19,21 +20,24 @@ export function useStepper(initialValues) {
   const last = steps.length - 1;
   const isPlaying = playing && index < last;
 
-  // operation = nome da função C (ver OPERATIONS em linkedListSteps.js)
-  const run = useCallback((operation, valor) => {
-    setModel((prev) => {
-      const result = runOperation(operation, prev.list, valor);
-      return { list: result.list, steps: result.steps };
-    });
-    setIndex(0);
-    setPlaying(false);
-  }, []);
+  // operation = nome da função C (ver `operations` da estrutura)
+  const run = useCallback(
+    (operation, valor) => {
+      setModel((prev) => {
+        const result = structure.operations[operation].build(prev.list, valor);
+        return { list: result.list, steps: result.steps };
+      });
+      setIndex(0);
+      setPlaying(false);
+    },
+    [structure],
+  );
 
   const reset = useCallback(() => {
-    setModel(makeInitialModel(initialValues));
+    setModel(makeInitialModel(structure));
     setIndex(0);
     setPlaying(false);
-  }, [initialValues]);
+  }, [structure]);
 
   const next = useCallback(() => {
     setPlaying(false);

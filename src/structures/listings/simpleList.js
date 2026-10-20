@@ -1,5 +1,6 @@
-
-//  Cada linha executável tem um `id` que os passos (linkedListSteps.js) usam para dizer "esta é a linha em execução".
+// GERADO a partir do código C real da disciplina. Não edite à mão: regenere com tools/gen-listings.mjs.
+// Texto verbatim, com o nº da linha no arquivo (n). Cada linha executável tem um `id` que os passos usam
+// para dizer "esta é a linha em execução".
 
 export const SOURCE = {
   repo: 'PauloHARocha/EDL-2026-1',
@@ -15,7 +16,7 @@ export const STRUCTS = {
     { n: 6, text: '    struct elemento* prox;' },
     { n: 7, text: '} Elem;' },
   ],
-  lista: [
+  desc: [
     { n: 9, text: 'typedef struct lista{' },
     { n: 10, text: '    Elem* inicio;' },
     { n: 11, text: '    int qtd;' },

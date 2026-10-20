@@ -2,15 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import ReactFlow, { Background, Controls, ReactFlowProvider, useReactFlow } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { nodeTypes } from './LinkedListNode';
-import { CodePanel, SnippetBar, StructPanel, VariablesPanel } from './Panels';
+import { CodePanel, LocalsStrip, MemoryPanel, StructPanel, VariablesPanel } from './Panels';
 import { snapshotToFlow } from './snapshotToFlow';
+import { STRUCTURES, getStructure } from './structures';
 import { useStepper } from './useStepper';
-
-const INITIAL_VALUES = [10, 20, 30, 40, 50];
-
-// Botões = funções do lista_int.c (o nome do botão é o nome da função em C)
-const INSERTS = ['inserir_inicio', 'inserir_final'];
-const OTHERS = ['remover_inicio', 'remover_final', 'tamanho_lista'];
 
 const buttonStyle = {
   padding: '6px 12px',
@@ -23,6 +18,18 @@ const buttonStyle = {
 };
 const disabledStyle = { opacity: 0.45, cursor: 'not-allowed' };
 const cardStyle = { background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 10 };
+
+const ANIMATIONS = `
+.react-flow__node { transition: transform 0.45s ease; }
+@keyframes edv-pop {
+  0%   { transform: scale(0.2); box-shadow: 0 0 0 0 rgba(22,163,74,0.55); }
+  55%  { transform: scale(1.35); box-shadow: 0 0 0 7px rgba(22,163,74,0.18); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+}
+@keyframes edv-fade { from { opacity: 1; } to { opacity: 0.55; } }
+.edv-born { animation: edv-pop 0.6s ease-out; }
+.edv-died { animation: edv-fade 0.6s ease-out forwards; }
+`;
 
 function Btn({ disabled, style, mono, ...props }) {
   return (
@@ -48,7 +55,7 @@ function Canvas({ snapshot }) {
 
   // Reenquadra quando a quantidade de nós muda (inserção/remoção)
   useEffect(() => {
-    const timer = setTimeout(() => fitView({ padding: 0.2, duration: 300, maxZoom: 1 }), 60);
+    const timer = setTimeout(() => fitView({ padding: 0.12, duration: 300, maxZoom: 1 }), 60);
     return () => clearTimeout(timer);
   }, [nodeCount, fitView]);
 
@@ -58,7 +65,7 @@ function Canvas({ snapshot }) {
       edges={edges}
       nodeTypes={nodeTypes}
       fitView
-      fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+      fitViewOptions={{ padding: 0.12, maxZoom: 1 }}
       nodesDraggable={false}
       nodesConnectable={false}
       elementsSelectable={false}
@@ -69,14 +76,17 @@ function Canvas({ snapshot }) {
   );
 }
 
-export function LinkedListVisualizer() {
-  const stepper = useStepper(INITIAL_VALUES);
+// Uma estrutura de dados completa: botões, desenho, passo a passo e painéis laterais.
+function StructureView({ structure }) {
+  const stepper = useStepper(structure);
   const { snapshot, previousSnapshot, index, total, isPlaying, next, prev } = stepper;
   const [input, setInput] = useState('60');
 
   const parsed = input.trim() === '' ? Number.NaN : Number(input);
   const validInput = Number.isInteger(parsed);
   const stepping = total > 1;
+  const { listing } = structure;
+  const hasValueButtons = structure.buttons.withValue.length > 0;
 
   // Setas ← → navegam pelos passos (exceto quando o foco está num campo de entrada)
   useEffect(() => {
@@ -90,70 +100,69 @@ export function LinkedListVisualizer() {
   }, [next, prev]);
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) 400px',
-        gap: 16,
-        padding: 16,
-        height: '100vh',
-        boxSizing: 'border-box',
-        background: '#f9fafb',
-        color: '#1f2937',
-        textAlign: 'left',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      {/* Efeito de deslizar quando os nós mudam de posição */}
-      <style>{'.react-flow__node { transition: transform 0.45s ease; }'}</style>
-
+    <>
       <main style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0, minHeight: 0 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <label htmlFor="valor" style={{ fontSize: 13 }}>
-            valor:
-          </label>
-          <input
-            id="valor"
-            type="number"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            style={{ width: 70, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6, color: '#1f2937', background: '#fff' }}
-          />
-          {INSERTS.map((name) => (
-            <Btn key={name} mono disabled={!validInput} onClick={() => stepper.run(name, parsed)}>
-              {name}
-            </Btn>
-          ))}
-          <span style={{ width: 1, alignSelf: 'stretch', background: '#d1d5db', margin: '0 4px' }} />
-          {OTHERS.map((name) => (
+          {hasValueButtons && (
+            <>
+              <label htmlFor="valor" style={{ fontSize: 13 }}>
+                valor:
+              </label>
+              <input
+                id="valor"
+                type="number"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                style={{ width: 70, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6, color: '#1f2937', background: '#fff' }}
+              />
+              {structure.buttons.withValue.map((name) => (
+                <Btn key={name} mono disabled={!validInput} onClick={() => stepper.run(name, parsed)}>
+                  {name}
+                </Btn>
+              ))}
+              <span style={{ width: 1, alignSelf: 'stretch', background: '#d1d5db', margin: '0 4px' }} />
+            </>
+          )}
+          {structure.buttons.without.map((name) => (
             <Btn key={name} mono onClick={() => stepper.run(name)}>
               {name}
             </Btn>
           ))}
           <Btn onClick={stepper.reset} style={{ marginLeft: 'auto' }}>
-            Reiniciar lista
+            Reiniciar estrutura
           </Btn>
         </div>
 
-        <div style={{ position: 'relative', flex: 1, minHeight: 0, ...cardStyle }}>
-          <div style={{ position: 'absolute', inset: 0 }}>
-            <ReactFlowProvider>
-              <Canvas snapshot={snapshot} />
-            </ReactFlowProvider>
+        <div style={{ ...cardStyle, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <LocalsStrip fn={snapshot.fn} vars={snapshot.vars} previousVars={previousSnapshot?.vars ?? null} />
+          <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+            <div style={{ position: 'absolute', inset: 0 }}>
+              <ReactFlowProvider>
+                <Canvas snapshot={snapshot} />
+              </ReactFlowProvider>
+            </div>
           </div>
         </div>
 
-        {/* A cada passo: o trecho de código em execução + a explicação do que ele faz */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 1fr)', gap: 12, alignItems: 'stretch' }}>
-          <SnippetBar fn={snapshot.fn} line={snapshot.line} />
-          <div style={{ ...cardStyle, padding: '10px 12px', fontSize: 14, lineHeight: 1.45 }}>
-            {stepping && (
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', marginBottom: 4 }}>
-                PASSO {index + 1} DE {total}
-              </div>
-            )}
-            {snapshot.message}
-          </div>
+        {/* A cada passo: a explicação do que a linha em execução faz (o código fica no painel lateral) */}
+        <div
+          style={{
+            ...cardStyle,
+            padding: '10px 12px',
+            fontSize: 14,
+            lineHeight: 1.45,
+            ...(snapshot.crash ? { borderColor: '#dc2626', background: '#fef2f2' } : {}),
+          }}
+        >
+          {stepping && (
+            <div style={{ fontSize: 11, fontWeight: 700, color: snapshot.crash ? '#dc2626' : '#6b7280', marginBottom: 4 }}>
+              PASSO {index + 1} DE {total}
+              {snapshot.crash ? ' · FALHA DE SEGMENTAÇÃO' : ''}
+            </div>
+          )}
+          {snapshot.message}
+          {!stepping && structure.initialNote && <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280' }}>{structure.initialNote}</div>}
+          {!stepping && structure.limitation && <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280' }}>{structure.limitation}</div>}
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -179,10 +188,65 @@ export function LinkedListVisualizer() {
       </main>
 
       <aside style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', minHeight: 0 }}>
-        <VariablesPanel vars={snapshot.vars} previousVars={previousSnapshot?.vars ?? null} />
-        <CodePanel fn={snapshot.fn} line={snapshot.line} />
-        <StructPanel />
+        <CodePanel listing={listing} fn={snapshot.fn} line={snapshot.line} />
+        <VariablesPanel
+          vars={snapshot.vars}
+          previousVars={previousSnapshot?.vars ?? null}
+          list={snapshot.list}
+          ghosts={snapshot.ghosts}
+          previousList={previousSnapshot?.list ?? null}
+        />
+        <MemoryPanel list={snapshot.list} ghosts={snapshot.ghosts} previousList={previousSnapshot?.list ?? null} />
+        <StructPanel structure={structure} />
       </aside>
+    </>
+  );
+}
+
+export function LinkedListVisualizer() {
+  const [structureId, setStructureId] = useState(STRUCTURES[0].id);
+  const structure = getStructure(structureId);
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) 400px',
+        gridTemplateRows: 'auto minmax(0, 1fr)',
+        gap: 12,
+        padding: 16,
+        // ocupa a janela inteira, ignorando limites de largura/margem do #root do template do Vite
+        position: 'fixed',
+        inset: 0,
+        boxSizing: 'border-box',
+        background: '#f9fafb',
+        color: '#1f2937',
+        textAlign: 'left',
+        fontFamily: 'system-ui, sans-serif',
+      }}
+    >
+      <style>{ANIMATIONS}</style>
+
+      {/* seletor de estrutura: cada uma traz o seu código C e as suas funções */}
+      <nav style={{ gridColumn: '1 / -1', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }} aria-label="Estruturas de dados">
+        <strong style={{ fontSize: 14, marginRight: 8 }}>EDvisu</strong>
+        {STRUCTURES.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            aria-pressed={s.id === structureId}
+            onClick={() => setStructureId(s.id)}
+            style={{
+              ...buttonStyle,
+              ...(s.id === structureId ? { background: '#1d4ed8', color: '#fff', borderColor: '#1d4ed8', fontWeight: 600 } : {}),
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </nav>
+
+      <StructureView key={structure.id} structure={structure} />
     </div>
   );
 }

@@ -1,108 +1,189 @@
-import { DESC_ID, NULL_ID, addressOf } from './linkedListSteps';
+import { DESC_ID, KINDS, NULL_ID, addressOf, eid, pointerText } from './memoryModel';
 
-const SPACING_X = 185; // distância horizontal entre nós
-const FIRST_NODE_X = 215; // o descritor ocupa o começo da linha
-const FLOATING_OFFSET_Y = 120; // quanto um nó "solto" desce em relação à fileira
-const DESC_OFFSET_Y = -12; // alinha a linha "inicio" do descritor com o centro dos nós
+const FLOATING_OFFSET_Y = 130; // quanto um nó "solto" desce em relação à fileira
+const STACK_STEP_Y = 120; // distância vertical entre nós da pilha
+const STACK_BOX_W = 132; // largura fixa dos nós da pilha (alinha as setas verticais)
+const STACK_NULL_W = 28;
+const STACK_FLOAT_X = 230; // nó solto da pilha sai para a direita
+const NULL_LEFT_ID = 'nullL'; // NULL à esquerda (campo ant do primeiro nó da lista dupla)
 
 const COLOR_EDGE = '#374151';
 const COLOR_EDGE_FOCUS = '#16a34a';
 const COLOR_EDGE_DETACHED = '#9ca3af';
+const COLOR_EDGE_DANGLING = '#dc2626';
+const U_PATH = { offset: 26, borderRadius: 12 }; // setas que contornam a fileira por baixo
 
-// Rótulo de um ponteiro: NULL, ? (lixo) ou endereço. `dangling` = aponta para memória já liberada
-// (a tela mostra o endereço em vermelho e riscado, sem mudar a largura do nó).
-function pointerLabel(list, target) {
-  if (target === undefined) return { text: '?', dangling: false };
-  if (target === null) return { text: 'NULL', dangling: false };
-  return { text: addressOf(target), dangling: list.freed.includes(target) };
-}
-
-// Traduz um snapshot (ver linkedListSteps.js) para o formato do React Flow.
+// Traduz um snapshot (ver memoryModel.js) para o formato do React Flow.
 // A tela é sempre DERIVADA do snapshot: nada de estado visual paralelo.
 export function snapshotToFlow(snapshot) {
   const { list, order, floating, vars, focusEdge, focusField } = snapshot;
+  const ghosts = snapshot.ghosts ?? {};
+  const cfg = KINDS[list.kind];
+  const stack = cfg.layout === 'stack';
+  const inline = cfg.layout === 'inline' || stack;
+  const out = stack ? 'down' : 'prox'; // alça de saída do campo prox
+  const inn = stack ? 'up' : 'in'; // alça de entrada
+  const doubly = cfg.nodeFields.includes('ant');
+  const circular = cfg.head === 'circular';
+
+  const nodeOf = (id) => list.nodes[id] ?? ghosts[id];
+  const exists = (id) => Boolean(nodeOf(id));
+  const indexOf = Object.fromEntries(order.map((id, i) => [id, i]));
+
+  const rowX0 = cfg.rowX0;
+  const posX = (i) => rowX0 + i * cfg.spacing;
+  const descHeight = 22 + 22 + 28 * cfg.fields.length + 18;
+  const descPos = inline ? { x: 0, y: -10 } : { x: 0, y: -(descHeight + 80) };
 
   // Variáveis-ponteiro viram "etiquetas" sobre o objeto para o qual apontam
-  // (li -> descritor, NULL -> nó NULL). Não-inicializadas e pendentes não têm alvo visível.
+  // (li -> descritor, NULL -> nó NULL). Não-inicializadas não têm alvo; pendentes só aparecem
+  // enquanto o nó liberado ainda está desenhado (passo do free).
   const tagsByNode = {};
   vars.forEach((v) => {
-    if (v.kind !== 'ptr' || v.uninit || v.dangling) return;
+    if (v.kind !== 'ptr' || v.uninit) return;
+    if (v.dangling && !ghosts[v.target]) return;
     const key = v.target ?? NULL_ID;
-    tagsByNode[key] = [...(tagsByNode[key] ?? []), { name: v.name }];
+    tagsByNode[key] = [...(tagsByNode[key] ?? []), { name: v.name, dangling: Boolean(v.dangling) }];
   });
 
-  // descritor (struct lista)
+  // ---------- arestas ----------
+  const edges = [];
+  let rightNullUsed = false;
+  let leftNullUsed = false;
+
+  const addEdge = ({ source, sourceHandle, field, logicalTarget, target, targetHandle, type, detached = false, dangling = false }) => {
+    const id = eid(source, field, logicalTarget);
+    const focused = id === focusEdge;
+    const color = focused ? COLOR_EDGE_FOCUS : dangling ? COLOR_EDGE_DANGLING : detached ? COLOR_EDGE_DETACHED : COLOR_EDGE;
+    edges.push({
+      id,
+      source,
+      sourceHandle,
+      target,
+      targetHandle,
+      type,
+      pathOptions: type === 'smoothstep' ? U_PATH : undefined,
+      animated: focused,
+      zIndex: focused ? 10 : 0,
+      style: { stroke: color, strokeWidth: focused ? 3 : 2, strokeDasharray: dangling || detached ? '6 4' : undefined },
+      markerEnd: { type: 'arrowclosed', color }, // 'arrowclosed' = MarkerType.ArrowClosed
+    });
+  };
+
+  // campos ponteiro do descritor
+  list.desc.fields.forEach((f) => {
+    if (f.kind !== 'ptr' || f.value === undefined) return;
+    const t = f.value;
+    if (t !== null && !exists(t)) return;
+    if (t === null) rightNullUsed = true;
+    addEdge({
+      source: DESC_ID,
+      sourceHandle: f.name,
+      field: f.name,
+      logicalTarget: t,
+      target: t ?? NULL_ID,
+      targetHandle: inline ? 'in' : f.name === 'final' ? 'topB' : 'topA',
+      dangling: t !== null && Boolean(ghosts[t]),
+    });
+  });
+
+  // campos ponteiro dos nós vivos (o nó liberado não desenha setas de saída)
+  Object.values(list.nodes).forEach((node) => {
+    const detached = floating[node.id] === 'removendo';
+    cfg.nodeFields.forEach((field) => {
+      const t = node[field];
+      if (t === undefined || (t !== null && !exists(t))) return;
+      const dangling = t !== null && Boolean(ghosts[t]);
+
+      if (field === 'ant') {
+        if (t === null) leftNullUsed = true;
+        addEdge({
+          source: node.id, sourceHandle: 'back', field, logicalTarget: t,
+          target: t ?? NULL_LEFT_ID, targetHandle: 'backIn', type: 'smoothstep', detached, dangling,
+        });
+        return;
+      }
+      if (t === null) {
+        rightNullUsed = true;
+        addEdge({ source: node.id, sourceHandle: out, field, logicalTarget: null, target: NULL_ID, targetHandle: inn, detached });
+      } else if (indexOf[t] > indexOf[node.id]) {
+        addEdge({ source: node.id, sourceHandle: out, field, logicalTarget: t, target: t, targetHandle: inn, detached, dangling });
+      } else {
+        // seta de volta (anel da lista circular): contorna a fileira por baixo
+        addEdge({
+          source: node.id, sourceHandle: 'back', field, logicalTarget: t, target: t, targetHandle: 'backIn',
+          type: 'smoothstep', detached, dangling,
+        });
+      }
+    });
+  });
+
+  // ---------- nós ----------
   const nodes = [
     {
       id: DESC_ID,
       type: 'descNode',
-      position: { x: 0, y: DESC_OFFSET_Y },
+      position: descPos,
       draggable: false,
       data: {
+        title: cfg.descStruct,
         address: addressOf(DESC_ID),
         tags: tagsByNode[DESC_ID] ?? [],
         fields: list.desc.fields.map((f) => {
-          const label = f.kind === 'ptr' ? pointerLabel(list, f.value) : { text: String(f.value), dangling: false };
+          const label = f.kind === 'ptr' ? pointerText(list, f.value) : { text: String(f.value), dangling: false };
           return { name: f.name, kind: f.kind, text: label.text, dangling: label.dangling, focused: f.name === focusField };
         }),
       },
     },
   ];
 
-  // nós Elem
+  const backOut = doubly ? '17%' : circular ? '75%' : null;
+  const backIn = doubly ? '83%' : circular ? '25%' : null;
+
   order.forEach((id, index) => {
-    const node = list.nodes[id];
-    const prox = pointerLabel(list, node.prox);
+    const node = nodeOf(id);
+    const ptrCell = (field) => ({ key: field, label: field, kind: 'ptr', ...pointerText(list, node[field]) });
+    const cells = [
+      ...(doubly ? [ptrCell('ant')] : []),
+      { key: 'valor', label: 'valor', kind: 'int', text: node.valor === null ? '?' : String(node.valor), dangling: false },
+      ptrCell('prox'),
+    ];
     nodes.push({
       id,
       type: 'listNode',
-      position: { x: FIRST_NODE_X + index * SPACING_X, y: floating[id] ? FLOATING_OFFSET_Y : 0 },
+      position: stack
+        ? { x: rowX0 + (floating[id] ? STACK_FLOAT_X : 0), y: index * STACK_STEP_Y }
+        : { x: posX(index), y: floating[id] ? FLOATING_OFFSET_Y : 0 },
       draggable: false,
       data: {
-        valor: node.valor,
-        proxText: prox.text,
-        proxDangling: prox.dangling,
+        cells,
         address: addressOf(id),
         tags: tagsByNode[id] ?? [],
-        state: floating[id] ?? null,
+        state: ghosts[id] ? 'liberado' : (floating[id] ?? null),
+        backOut,
+        backIn,
+        vertical: stack,
+        boxWidth: stack ? STACK_BOX_W : null,
       },
     });
   });
 
-  nodes.push({
-    id: NULL_ID,
-    type: 'nullNode',
-    position: { x: FIRST_NODE_X + order.length * SPACING_X, y: 0 },
-    draggable: false,
-    data: { tags: tagsByNode[NULL_ID] ?? [] },
-  });
-
-  // Uma aresta por ponteiro já inicializado que aponta para algo visível
-  // (NULL ou um nó vivo). Ponteiro para memória liberada não desenha aresta.
-  const edges = [];
-  const addEdge = (source, sourceHandle, target, { detached = false } = {}) => {
-    const id = sourceHandle ? `${source}.${sourceHandle}->${target}` : `${source}->${target}`;
-    const focused = id === focusEdge;
-    const color = focused ? COLOR_EDGE_FOCUS : detached ? COLOR_EDGE_DETACHED : COLOR_EDGE;
-    edges.push({
-      id,
-      source,
-      sourceHandle: sourceHandle ?? undefined,
-      target,
-      animated: focused,
-      style: { stroke: color, strokeWidth: focused ? 3 : 2, strokeDasharray: detached ? '6 4' : undefined },
-      markerEnd: { type: 'arrowclosed', color }, // 'arrowclosed' = MarkerType.ArrowClosed
+  // NULL à direita: sempre nas listas/pilha/fila; na circular só quando alguém aponta para NULL
+  const nullTags = tagsByNode[NULL_ID] ?? [];
+  if (!circular || rightNullUsed || nullTags.length) {
+    nodes.push({
+      id: NULL_ID,
+      type: 'nullNode',
+      position: stack
+        ? { x: rowX0 + 0.8 * STACK_BOX_W - STACK_NULL_W / 2, y: order.length * STACK_STEP_Y }
+        : { x: posX(order.length), y: 0 },
+      draggable: false,
+      data: { tags: nullTags, orient: stack ? 'down' : 'right' },
     });
-  };
-  const visible = (target) => target === null || Boolean(list.nodes[target]);
-
-  list.desc.fields.forEach((f) => {
-    if (f.kind === 'ptr' && f.value !== undefined && visible(f.value)) addEdge(DESC_ID, f.name, f.value ?? NULL_ID);
-  });
-  Object.values(list.nodes).forEach((node) => {
-    if (node.prox === undefined || !visible(node.prox)) return;
-    addEdge(node.id, null, node.prox ?? NULL_ID, { detached: floating[node.id] === 'removendo' });
-  });
+  }
+  if (cfg.leftNull && (leftNullUsed || doubly)) {
+    nodes.push({ id: NULL_LEFT_ID, type: 'nullNode', position: { x: 0, y: 0 }, draggable: false, data: { tags: [] } });
+  }
 
   return { nodes, edges };
 }
