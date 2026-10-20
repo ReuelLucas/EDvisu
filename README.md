@@ -162,4 +162,3 @@ Verifica, para as cinco estruturas, que toda linha citada pelos passos existe no
 
 O código C exibido vem do repositório da disciplina de Estrutura de Dados Lineares (UNICAP), [PauloHARocha/EDL-2026-1](https://github.com/PauloHARocha/EDL-2026-1), pasta `estruturas-de-dados/` (listas, pilha e fila dinâmicas), commit `8e45a40`. Os direitos sobre esse código pertencem ao autor original.
 
-Equipe: _preencher_
