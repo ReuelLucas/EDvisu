@@ -27,10 +27,6 @@ Nove estruturas, em dois grupos de abas no topo da tela. O código C exibido é 
 | Fila (vetor circular) | `inserir`, `remover`, `acessar`, `tamanho`, `destruir`, `busca_valor`*, `remove_valor`* |
 | Tabela hash (`int **itens`, sem tratamento de colisão) | `insereHash_SemColisao_Rejeita`, `insereHash_SemColisao_Sobrescreve`, `buscaHash_SemColisao`, `removeHash_SemColisao`*, `liberaHash`, `criaHash` (com `chaveDivisao` mostrada como função chamada) |
 
-\* função autoral (não está no repositório do professor).
-
-Lista dupla e lista circular **não** têm versão em vetor: com vetor, a dupla vira a própria lista sequencial (não há `ant`) e a circular vira a fila circular, que já existe.
-
 Na tela:
 
 - **Passo a passo nos dois sentidos:** Voltar/Avançar, slider, reprodução automática e setas ← → do teclado.
@@ -146,11 +142,6 @@ Formato de um snapshot (documentado no topo de `memoryModel.js`):
 
 As estruturas com vetor usam o mesmo contrato com `view: 'array'` e `mem` no lugar de `list` (ver topo de `arrayModel.js`).
 
-### Procedência do código C
-
-- **Do repositório do professor** (verbatim, com número de linha e commit): tudo que existe lá, incluindo `destruir` da lista simples, dupla e pilha, as pilha/fila estáticas e as funções da tabela hash.
-- **Autoral** (selo "autoral" no painel de código): funções que **não existem** no repositório, escritas no mesmo estilo e guardadas em `tools/autoral/*.c` — `busca_valor`, `remove_valor`, `removeHash_SemColisao`, `destruir` da fila e da lista circular, e a lista sequencial inteira. Foram compiladas (`gcc -fsyntax-only`) mas **devem ser conferidas** com o livro *Algoritmos e Estruturas de Dados em Linguagem C* (André Ricardo Backes), indicado pelo professor. Para trocar uma por outra versão, edite o `.c` correspondente (mantendo as linhas esperadas em `tools/gen-listings.mjs`) e regenere.
-
 ### Adicionando uma função nova
 
 1. Inclua as linhas da função no `STRUCTURES` de `tools/gen-listings.mjs` (função do repositório) ou em `tools/autoral/` (função autoral) e regenere os listings (veja abaixo).
@@ -184,13 +175,12 @@ Verificam, para as nove estruturas, que toda linha citada pelos passos existe no
 - O formato do snapshot é o contrato que um futuro interpretador de C deverá produzir, sem mudar a interface.
 - Funções como `acessar_*` das listas encadeadas e `menor_valor_pilha` ainda não têm passo a passo.
 - `busca_valor`, `remove_valor` e outras funções marcadas "autoral" não vêm do repositório e precisam ser conferidas com o livro do Backes.
-- A tabela hash só cobre "sem tratamento de colisão" (o que o repositório tem); encadeamento e endereçamento aberto ficam para quando o professor publicar.
+- A tabela hash só cobre "sem tratamento de colisão" (o que o repositório tem); encadeamento e endereçamento aberto ficam para as próximas sprints.
 
 ## Próximos passos
 
 - Passo a passo das funções restantes (`acessar_*`, remoções da lista circular quando o professor implementar).
 - Hash com tratamento de colisão.
-- Decisão em aberto sobre como extrair o estado de um código C real: backend com GDB, WebAssembly (Emscripten) ou interpretador próprio de um subconjunto de C.
 - Modo "preveja o resultado antes de executar" como gamificação.
 
 ## Contribuindo
@@ -201,5 +191,5 @@ Verificam, para as nove estruturas, que toda linha citada pelos passos existe no
 
 ## Créditos
 
-O código C exibido vem do repositório da disciplina de Estrutura de Dados Lineares (UNICAP), [PauloHARocha/EDL-2026-1](https://github.com/PauloHARocha/EDL-2026-1), pasta `estruturas-de-dados/` (listas, pilhas, filas e tabela hash), commit `8e45a40`. Os direitos sobre esse código pertencem ao autor original. As funções marcadas "autoral" foram escritas pela equipe e devem ser conferidas com *Algoritmos e Estruturas de Dados em Linguagem C*, de André Ricardo Backes.
+O código C exibido vem do repositório da disciplina de Estrutura de Dados Lineares (UNICAP), [PauloHARocha/EDL-2026-1](https://github.com/PauloHARocha/EDL-2026-1), pasta `estruturas-de-dados/` (listas, pilhas, filas e tabela hash), commit `8e45a40`. Os direitos sobre esse código pertencem ao autor original. 
 
