@@ -5,6 +5,7 @@ import {
   DESC_ID, addNode, addressOf, createRecorder, descVar, eid, elemVar, getField, intVar, newNode,
   setField, setPtr, setValor,
 } from '../memoryModel';
+import { buildBuscaValor, buildRemoveValorCircular, buildDestruirCircular } from './valueOps';
 import * as listing from './listings/circularList';
 
 const finalEdge = (target) => eid(DESC_ID, 'final', target);
@@ -122,9 +123,12 @@ export const circularList = {
   ],
   structNote: 'O descritor guarda só final. O primeiro nó é final->prox, e o prox do último volta para o primeiro: não existe NULL no meio do anel.',
   limitation: 'No repositório da disciplina, só inserir_inicio e inserir_final estão implementadas; remover_*, acessar_* e destruir ainda são funções vazias.',
-  buttons: { withValue: ['inserir_inicio', 'inserir_final'], without: [] },
+  buttons: { withValue: ['inserir_inicio', 'inserir_final', 'busca_valor', 'remove_valor'], without: ['destruir'] },
   operations: {
     inserir_inicio: { build: buildInserirInicio, needsValue: true },
     inserir_final: { build: buildInserirFinal, needsValue: true },
+    busca_valor: { build: buildBuscaValor, needsValue: true },
+    remove_valor: { build: buildRemoveValorCircular, needsValue: true },
+    destruir: { build: buildDestruirCircular, needsValue: false },
   },
 };

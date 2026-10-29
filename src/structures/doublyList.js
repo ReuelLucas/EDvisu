@@ -5,6 +5,7 @@ import {
   setField, setPtr, setValor,
 } from '../memoryModel';
 import { buildTamanhoLista } from './listCommon';
+import { buildBuscaValor, buildRemoveValorDupla, buildDestruirLista } from './valueOps';
 import * as listing from './listings/doublyList';
 
 const descEdge = (field, target) => eid(DESC_ID, field, target);
@@ -234,12 +235,15 @@ export const doublyList = {
   ],
   structNote: 'Cada nó aponta para o próximo e para o anterior. O descritor guarda inicio e final, então inserir e remover nas duas pontas não precisa percorrer a lista.',
   limitation: 'remover_inicio com um único nó trava no código original (NULL->ant). O visualizador mostra o travamento em vez de esconder o erro.',
-  buttons: { withValue: ['inserir_inicio', 'inserir_final'], without: ['remover_inicio', 'remover_final', 'tamanho_lista'] },
+  buttons: { withValue: ['inserir_inicio', 'inserir_final', 'busca_valor', 'remove_valor'], without: ['remover_inicio', 'remover_final', 'tamanho_lista', 'destruir'] },
   operations: {
     inserir_inicio: { build: buildInserirInicio, needsValue: true },
     inserir_final: { build: buildInserirFinal, needsValue: true },
     remover_inicio: { build: buildRemoverInicio, needsValue: false },
     remover_final: { build: buildRemoverFinal, needsValue: false },
     tamanho_lista: { build: buildTamanhoLista, needsValue: false },
+    busca_valor: { build: buildBuscaValor, needsValue: true },
+    remove_valor: { build: buildRemoveValorDupla, needsValue: true },
+    destruir: { build: buildDestruirLista, needsValue: false },
   },
 };

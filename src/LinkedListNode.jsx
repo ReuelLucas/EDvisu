@@ -7,10 +7,17 @@ const VAR_COLORS = {
   li: '#2563eb',
   p: '#2563eb',
   f: '#2563eb',
+  ha: '#2563eb',
   no: '#16a34a',
   aux: '#ea580c',
   ant: '#7c3aed',
   count: '#0f766e',
+  i: '#7c3aed',
+  pos: '#0f766e',
+  novo: '#16a34a',
+  topo: '#2563eb',
+  inicio: '#16a34a',
+  final: '#ea580c',
 };
 export const colorOfVar = (name) => VAR_COLORS[name] ?? '#6b7280';
 
@@ -146,8 +153,15 @@ export function DescNode({ data }) {
   return (
     <div style={{ fontFamily: MONO, color: '#1f2937', width: 160 }}>
       <Tags tags={data.tags} />
-      <div style={{ border: '2px solid #1d4ed8', borderRadius: 8, background: '#eff6ff' }}>
-        <div style={{ height: 22, lineHeight: '22px', padding: '0 10px', fontSize: 10, color: '#1d4ed8', borderBottom: '1px solid #1d4ed8' }}>
+      <div
+        style={{
+          border: `2px ${data.freed ? 'dashed' : 'solid'} ${data.freed ? '#9ca3af' : '#1d4ed8'}`,
+          borderRadius: 8,
+          background: data.freed ? '#f3f4f6' : '#eff6ff',
+          opacity: data.freed ? 0.75 : 1,
+        }}
+      >
+        <div style={{ height: 22, lineHeight: '22px', padding: '0 10px', fontSize: 10, color: data.freed ? '#6b7280' : '#1d4ed8', borderBottom: `1px solid ${data.freed ? '#9ca3af' : '#1d4ed8'}` }}>
           {data.title}
         </div>
         {data.fields.map((f, i) => (
@@ -170,7 +184,10 @@ export function DescNode({ data }) {
           </div>
         ))}
       </div>
-      <div style={addressStyle}>{data.address}</div>
+      <div style={addressStyle}>
+        {data.address}
+        {data.freed && <span style={{ color: '#dc2626', fontWeight: 700 }}> · liberado</span>}
+      </div>
     </div>
   );
 }

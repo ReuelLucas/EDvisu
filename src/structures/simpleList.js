@@ -4,6 +4,7 @@ import {
   addressOf, setField, setPtr, setValor,
 } from '../memoryModel';
 import { buildTamanhoLista } from './listCommon';
+import { buildBuscaValor, buildRemoveValorSimples, buildDestruirLista } from './valueOps';
 import * as listing from './listings/simpleList';
 
 const descEdge = (target) => eid(DESC_ID, 'inicio', target);
@@ -270,12 +271,15 @@ export const simpleList = {
     { key: 'desc', color: '#1d4ed8', cells: [{ type: 'Elem*', name: 'inicio' }, { type: 'int', name: 'qtd' }] },
   ],
   structNote: 'Lista é um ponteiro para a struct lista (o descritor). Ela guarda onde a cadeia de Elem começa e quantos nós existem.',
-  buttons: { withValue: ['inserir_inicio', 'inserir_final'], without: ['remover_inicio', 'remover_final', 'tamanho_lista'] },
+  buttons: { withValue: ['inserir_inicio', 'inserir_final', 'busca_valor', 'remove_valor'], without: ['remover_inicio', 'remover_final', 'tamanho_lista', 'destruir'] },
   operations: {
     inserir_inicio: { build: buildInserirInicio, needsValue: true },
     inserir_final: { build: buildInserirFinal, needsValue: true },
     remover_inicio: { build: buildRemoverInicio, needsValue: false },
     remover_final: { build: buildRemoverFinal, needsValue: false },
     tamanho_lista: { build: buildTamanhoLista, needsValue: false },
+    busca_valor: { build: buildBuscaValor, needsValue: true },
+    remove_valor: { build: buildRemoveValorSimples, needsValue: true },
+    destruir: { build: buildDestruirLista, needsValue: false },
   },
 };

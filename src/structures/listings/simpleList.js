@@ -24,6 +24,9 @@ export const STRUCTS = {
   ],
 };
 
+// funções que NÃO vêm do repositório do professor (escritas pelo EDvisu; arquivo-fonte em tools/autoral)
+export const AUTHORED = {"busca_valor":"tools/autoral/lista_simples.c","remove_valor":"tools/autoral/lista_simples.c"};
+
 export const FUNCTIONS = {
   inserir_inicio: [
     { n: 23, id: 'sig', text: 'int inserir_inicio(Lista li, int valor){' },
@@ -109,5 +112,56 @@ export const FUNCTIONS = {
     { n: 126, id: null, text: '    }' },
     { n: 127, id: 'ret', text: '    return count;' },
     { n: 128, id: null, text: '}' },
+  ],
+  destruir: [
+    { n: 99, id: 'sig', text: 'void destruir(Lista li){' },
+    { n: 100, id: 'ifli', text: '    if(li != NULL){' },
+    { n: 101, id: 'noinit', text: '        Elem* no = li->inicio;' },
+    { n: 102, id: 'while', text: '        while(no != NULL){' },
+    { n: 103, id: 'proxinit', text: '            Elem *prox = no->prox;' },
+    { n: 104, id: 'free', text: '            free(no);' },
+    { n: 105, id: 'avanca', text: '            no = prox;' },
+    { n: 106, id: null, text: '        }' },
+    { n: 107, id: 'freedesc', text: '        free(li);' },
+    { n: 108, id: null, text: '    }' },
+    { n: 109, id: null, text: '}' },
+  ],
+  busca_valor: [
+    { n: 5, id: 'sig', text: 'int busca_valor(Lista li, int valor, int* pos){' },
+    { n: 6, id: 'ifguard', text: '    if(li == NULL || li->inicio == NULL)' },
+    { n: 7, id: 'retguard', text: '        return 1;' },
+    { n: 8, id: 'auxinit', text: '    Elem* aux = li->inicio;' },
+    { n: 9, id: 'icount', text: '    int i = 0;' },
+    { n: 10, id: 'while', text: '    while(aux != NULL){' },
+    { n: 11, id: 'ifigual', text: '        if(aux->valor == valor){' },
+    { n: 12, id: 'setpos', text: '            *pos = i;' },
+    { n: 13, id: 'ret0', text: '            return 0;' },
+    { n: 14, id: null, text: '        }' },
+    { n: 15, id: 'avanca', text: '        aux = aux->prox;' },
+    { n: 16, id: 'inc', text: '        i++;' },
+    { n: 17, id: null, text: '    }' },
+    { n: 18, id: 'retnao', text: '    return 1;' },
+    { n: 19, id: null, text: '}' },
+  ],
+  remove_valor: [
+    { n: 21, id: 'sig', text: 'int remove_valor(Lista li, int valor){' },
+    { n: 22, id: 'ifguard', text: '    if(li == NULL || li->inicio == NULL)' },
+    { n: 23, id: 'retguard', text: '        return 1;' },
+    { n: 24, id: 'auxinit', text: '    Elem* aux = li->inicio;' },
+    { n: 25, id: 'antinit', text: '    Elem* ant = NULL;' },
+    { n: 26, id: 'while', text: '    while(aux != NULL && aux->valor != valor){' },
+    { n: 27, id: 'setant', text: '        ant = aux;' },
+    { n: 28, id: 'avanca', text: '        aux = aux->prox;' },
+    { n: 29, id: null, text: '    }' },
+    { n: 30, id: 'ifnao', text: '    if(aux == NULL)' },
+    { n: 31, id: 'retnao', text: '        return 1;' },
+    { n: 32, id: 'ifprim', text: '    if(ant == NULL)' },
+    { n: 33, id: 'sethead', text: '        li->inicio = aux->prox;' },
+    { n: 34, id: null, text: '    else' },
+    { n: 35, id: 'link', text: '        ant->prox = aux->prox;' },
+    { n: 36, id: 'free', text: '    free(aux);' },
+    { n: 37, id: 'qtddec', text: '    li->qtd--;' },
+    { n: 38, id: 'ret0', text: '    return 0;' },
+    { n: 39, id: null, text: '}' },
   ],
 };

@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import ReactFlow, { Background, Controls, ReactFlowProvider, useReactFlow } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { nodeTypes } from './LinkedListNode';
-import { CodePanel, LocalsStrip, MemoryPanel, StructPanel, VariablesPanel } from './Panels';
+import { ArrayCanvas, ArrayVariablesPanel } from './ArrayView';
+import { CodePanel, LocalsStrip, MemoryPanel, StructPanel, VariablesPanel, captionStyle, titleStyle } from './Panels';
 import { snapshotToFlow } from './snapshotToFlow';
-import { STRUCTURES, getStructure } from './structures';
+import { GROUPS, STRUCTURES, getStructure } from './structures';
 import { useStepper } from './useStepper';
 
 const buttonStyle = {
@@ -18,6 +19,7 @@ const buttonStyle = {
 };
 const disabledStyle = { opacity: 0.45, cursor: 'not-allowed' };
 const cardStyle = { background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 10 };
+const cardStyleP = { ...cardStyle, padding: 12 };
 
 const ANIMATIONS = `
 .react-flow__node { transition: transform 0.45s ease; }
@@ -81,12 +83,20 @@ function StructureView({ structure }) {
   const stepper = useStepper(structure);
   const { snapshot, previousSnapshot, index, total, isPlaying, next, prev } = stepper;
   const [input, setInput] = useState('60');
+  const [startEmpty, setStartEmpty] = useState(false);
+  const restart = (empty) => {
+    setStartEmpty(empty);
+    stepper.reset(empty);
+  };
 
   const parsed = input.trim() === '' ? Number.NaN : Number(input);
   const validInput = Number.isInteger(parsed);
   const stepping = total > 1;
   const { listing } = structure;
   const hasValueButtons = structure.buttons.withValue.length > 0;
+  const isArray = structure.view === 'array';
+  // criaHash e similares só fazem sentido com a estrutura destruída; as demais, só com ela viva
+  const blocked = (name) => (structure.operations[name].onlyWhenDestroyed ? !stepper.destroyed : stepper.destroyed);
 
   // Setas ← → navegam pelos passos (exceto quando o foco está num campo de entrada)
   useEffect(() => {
@@ -116,7 +126,7 @@ function StructureView({ structure }) {
                 style={{ width: 70, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6, color: '#1f2937', background: '#fff' }}
               />
               {structure.buttons.withValue.map((name) => (
-                <Btn key={name} mono disabled={!validInput} onClick={() => stepper.run(name, parsed)}>
+                <Btn key={name} mono disabled={!validInput || blocked(name)} onClick={() => stepper.run(name, parsed)}>
                   {name}
                 </Btn>
               ))}
@@ -124,22 +134,31 @@ function StructureView({ structure }) {
             </>
           )}
           {structure.buttons.without.map((name) => (
-            <Btn key={name} mono onClick={() => stepper.run(name)}>
+            <Btn key={name} mono disabled={blocked(name)} onClick={() => stepper.run(name)}>
               {name}
             </Btn>
           ))}
-          <Btn onClick={stepper.reset} style={{ marginLeft: 'auto' }}>
-            Reiniciar estrutura
+          <span style={{ marginLeft: 'auto', fontSize: 13 }}>Iniciar:</span>
+          <Btn onClick={() => restart(false)} style={startEmpty ? undefined : { outline: '2px solid #2563eb' }}>
+            com valores
           </Btn>
+          <Btn onClick={() => restart(true)} style={startEmpty ? { outline: '2px solid #2563eb' } : undefined}>
+            vazia
+          </Btn>
+          <Btn onClick={() => stepper.reset(startEmpty)}>Reiniciar</Btn>
         </div>
 
         <div style={{ ...cardStyle, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <LocalsStrip fn={snapshot.fn} vars={snapshot.vars} previousVars={previousSnapshot?.vars ?? null} />
+          {!isArray && <LocalsStrip fn={snapshot.fn} vars={snapshot.vars} previousVars={previousSnapshot?.vars ?? null} />}
           <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
             <div style={{ position: 'absolute', inset: 0 }}>
-              <ReactFlowProvider>
-                <Canvas snapshot={snapshot} />
-              </ReactFlowProvider>
+              {isArray ? (
+                <ArrayCanvas snapshot={snapshot} />
+              ) : (
+                <ReactFlowProvider>
+                  <Canvas snapshot={snapshot} />
+                </ReactFlowProvider>
+              )}
             </div>
           </div>
         </div>
@@ -189,14 +208,20 @@ function StructureView({ structure }) {
 
       <aside style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', minHeight: 0 }}>
         <CodePanel listing={listing} fn={snapshot.fn} line={snapshot.line} />
-        <VariablesPanel
-          vars={snapshot.vars}
-          previousVars={previousSnapshot?.vars ?? null}
-          list={snapshot.list}
-          ghosts={snapshot.ghosts}
-          previousList={previousSnapshot?.list ?? null}
-        />
-        <MemoryPanel list={snapshot.list} ghosts={snapshot.ghosts} previousList={previousSnapshot?.list ?? null} />
+        {isArray ? (
+          <ArrayVariablesPanel snapshot={snapshot} previous={previousSnapshot} cardStyle={cardStyleP} titleStyle={titleStyle} captionStyle={captionStyle} />
+        ) : (
+          <>
+            <VariablesPanel
+              vars={snapshot.vars}
+              previousVars={previousSnapshot?.vars ?? null}
+              list={snapshot.list}
+              ghosts={snapshot.ghosts}
+              previousList={previousSnapshot?.list ?? null}
+            />
+            <MemoryPanel list={snapshot.list} ghosts={snapshot.ghosts} previousList={previousSnapshot?.list ?? null} />
+          </>
+        )}
         <StructPanel structure={structure} />
       </aside>
     </>
@@ -230,19 +255,24 @@ export function LinkedListVisualizer() {
       {/* seletor de estrutura: cada uma traz o seu código C e as suas funções */}
       <nav style={{ gridColumn: '1 / -1', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }} aria-label="Estruturas de dados">
         <strong style={{ fontSize: 14, marginRight: 8 }}>EDvisu</strong>
-        {STRUCTURES.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            aria-pressed={s.id === structureId}
-            onClick={() => setStructureId(s.id)}
-            style={{
-              ...buttonStyle,
-              ...(s.id === structureId ? { background: '#1d4ed8', color: '#fff', borderColor: '#1d4ed8', fontWeight: 600 } : {}),
-            }}
-          >
-            {s.label}
-          </button>
+        {GROUPS.map((g) => (
+          <span key={g.id} style={{ display: 'inline-flex', gap: 6, alignItems: 'center', marginRight: 10 }}>
+            <span style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.4 }}>{g.label}</span>
+            {STRUCTURES.filter((s) => s.group === g.id).map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                aria-pressed={s.id === structureId}
+                onClick={() => setStructureId(s.id)}
+                style={{
+                  ...buttonStyle,
+                  ...(s.id === structureId ? { background: '#1d4ed8', color: '#fff', borderColor: '#1d4ed8', fontWeight: 600 } : {}),
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </span>
         ))}
       </nav>
 

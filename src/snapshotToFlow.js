@@ -72,7 +72,7 @@ export function snapshotToFlow(snapshot) {
 
   // campos ponteiro do descritor
   list.desc.fields.forEach((f) => {
-    if (f.kind !== 'ptr' || f.value === undefined) return;
+    if (list.destroyed || f.kind !== 'ptr' || f.value === undefined) return;
     const t = f.value;
     if (t !== null && !exists(t)) return;
     if (t === null) rightNullUsed = true;
@@ -127,6 +127,7 @@ export function snapshotToFlow(snapshot) {
       draggable: false,
       data: {
         title: cfg.descStruct,
+        freed: Boolean(list.destroyed),
         address: addressOf(DESC_ID),
         tags: tagsByNode[DESC_ID] ?? [],
         fields: list.desc.fields.map((f) => {
@@ -170,7 +171,7 @@ export function snapshotToFlow(snapshot) {
 
   // NULL à direita: sempre nas listas/pilha/fila; na circular só quando alguém aponta para NULL
   const nullTags = tagsByNode[NULL_ID] ?? [];
-  if (!circular || rightNullUsed || nullTags.length) {
+  if (!list.destroyed && (!circular || rightNullUsed || nullTags.length)) {
     nodes.push({
       id: NULL_ID,
       type: 'nullNode',

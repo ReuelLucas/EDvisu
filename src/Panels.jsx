@@ -375,6 +375,7 @@ export function LocalsStrip({ fn, vars, previousVars }) {
 
 export function CodePanel({ listing, fn, line }) {
   const lines = fn ? listing.FUNCTIONS[fn] : null;
+  const authored = fn ? listing.AUTHORED?.[fn] : null;
   const boxRef = useRef(null);
   const activeRef = useRef(null);
 
@@ -391,8 +392,18 @@ export function CodePanel({ listing, fn, line }) {
     <section style={cardStyle}>
       <h3 style={titleStyle}>
         Código C{fn ? ` — ${fn}()` : ''}
-        {fn && <span style={{ fontWeight: 400, color: '#6b7280' }}> · {listing.SOURCE.file}</span>}
+        {fn && !authored && <span style={{ fontWeight: 400, color: '#6b7280' }}> · {listing.SOURCE.file}</span>}
+        {authored && (
+          <span style={{ fontWeight: 600, color: '#92400e', background: '#fef3c7', borderRadius: 6, padding: '1px 6px', marginLeft: 6, fontSize: 11 }}>
+            autoral
+          </span>
+        )}
       </h3>
+      {authored && (
+        <p style={{ ...captionStyle, margin: '0 0 6px' }}>
+          Esta função não está no repositório do professor: foi escrita no mesmo estilo (arquivo {authored.split('/').pop()}). Confira com o livro do Backes.
+        </p>
+      )}
       {lines ? (
         <div ref={boxRef} style={{ ...codeBoxStyle, position: 'relative', padding: '4px 0', fontSize: 12, maxHeight: 240, overflowY: 'auto' }}>
           {lines.map((l, i) => {
@@ -406,3 +417,5 @@ export function CodePanel({ listing, fn, line }) {
     </section>
   );
 }
+
+export { cardStyle, titleStyle, captionStyle };
