@@ -203,4 +203,3 @@ Verificam, para as nove estruturas, que toda linha citada pelos passos existe no
 
 O código C exibido vem do repositório da disciplina de Estrutura de Dados Lineares (UNICAP), [PauloHARocha/EDL-2026-1](https://github.com/PauloHARocha/EDL-2026-1), pasta `estruturas-de-dados/` (listas, pilhas, filas e tabela hash), commit `8e45a40`. Os direitos sobre esse código pertencem ao autor original. As funções marcadas "autoral" foram escritas pela equipe e devem ser conferidas com *Algoritmos e Estruturas de Dados em Linguagem C*, de André Ricardo Backes.
 
-Equipe: _preencher_
