@@ -24,6 +24,12 @@ export const STRUCTS = {
   ],
 };
 
+// funções que NÃO vêm do repositório do professor (escritas pelo EDvisu; arquivo-fonte em tools/autoral)
+export const AUTHORED = {};
+
+// funções do repositório cujo NOME foi trocado no EDvisu: { nome usado aqui: nome original }
+export const RENAMED = {};
+
 export const FUNCTIONS = {
   push: [
     { n: 23, id: 'sig', text: 'int push(Pilha p, int valor) {' },
@@ -76,5 +82,21 @@ export const FUNCTIONS = {
     { n: 67, id: null, text: '    }' },
     { n: 68, id: 'ret', text: '    return p->qtd;' },
     { n: 69, id: null, text: '}' },
+  ],
+  destruir: [
+    { n: 71, id: 'sig', text: 'void destruir(Pilha p){' },
+    { n: 72, id: null, text: '' },
+    { n: 73, id: 'ifli', text: '    if(p != NULL){' },
+    { n: 74, id: 'auxdecl', text: '        Elem * aux;' },
+    { n: 75, id: null, text: '' },
+    { n: 76, id: 'while', text: '    while(p->topo != NULL){' },
+    { n: 77, id: 'setaux', text: '        aux = p->topo;' },
+    { n: 78, id: 'settopo', text: '        p->topo = aux->prox;' },
+    { n: 79, id: 'free', text: '        free(aux);' },
+    { n: 80, id: null, text: '        Elem *aux;' },
+    { n: 81, id: null, text: '        }' },
+    { n: 82, id: 'freedesc', text: '    free(p);' },
+    { n: 83, id: null, text: '    }' },
+    { n: 84, id: null, text: '}' },
   ],
 };

@@ -125,6 +125,7 @@ export function createList(kind, values = []) {
     desc: { fields: cfg.fields.map((f) => ({ name: f.name, kind: f.kind, value: initial[f.name] })) },
     nodes,
     nextId: n + 1,
+    destroyed: false, // true depois de free(li): o próprio descritor foi liberado
     freed: [], // ids já liberados com free(): ponteiros que ainda apontam para eles estão "pendentes"
   };
 }
@@ -197,7 +198,7 @@ export function describeObject(list, id, ghosts = {}) {
       id,
       address: addressOf(id),
       type: cfg.descStruct,
-      freed: false,
+      freed: Boolean(list.destroyed),
       fields: list.desc.fields.map((f) => {
         if (f.kind === 'int') return { name: f.name, type: 'int', text: String(f.value), dangling: false, ptr: false };
         const p = pointerText(list, f.value);
@@ -252,7 +253,7 @@ export function descVar(list) {
     target: DESC_ID,
     pointee: cfg.descStruct,
     uninit: false,
-    dangling: false,
+    dangling: Boolean(list.destroyed),
   };
 }
 
@@ -295,6 +296,10 @@ export function createRecorder(fn, list) {
       rec.ghosts = { ...rec.ghosts, [id]: rec.state.nodes[id] };
       rec.state = freeNode(rec.state, id);
     },
+    // free(li): o descritor também é liberado (as setas que saíam dele somem; li fica pendente)
+    freeDesc() {
+      rec.state = { ...rec.state, destroyed: true };
+    },
     // return: as variáveis locais deixam de existir (só o descritor, que é do chamador, permanece).
     ret(line, message) {
       rec.ended = true;
@@ -308,7 +313,9 @@ export function idleSnapshot(list) {
   return {
     fn: null,
     line: null,
-    message: 'Estrutura pronta. Escolha uma função para ver o passo a passo do código C.',
+    message: list.destroyed
+      ? 'Estrutura destruída (o descritor foi liberado). Use "Iniciar" para criá-la de novo.'
+      : 'Estrutura pronta. Escolha uma função para ver o passo a passo do código C.',
     list,
     order: traverse(list),
     floating: {},

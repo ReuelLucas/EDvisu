@@ -3,6 +3,7 @@ import {
   DESC_ID, addNode, addressOf, createRecorder, descVar, eid, elemVar, getField, intVar, newNode,
   setField, setPtr, setValor,
 } from '../memoryModel';
+import { buildDestruirLista } from './valueOps';
 import * as listing from './listings/queue';
 
 const descEdge = (field, target) => eid(DESC_ID, field, target);
@@ -121,9 +122,10 @@ export const queue = {
     { key: 'desc', color: '#1d4ed8', cells: [{ type: 'struct elemento*', name: 'inicio' }, { type: 'struct elemento*', name: 'final' }, { type: 'int', name: 'qtd' }] },
   ],
   structNote: 'Fila é um ponteiro para a struct fila. inicio aponta para quem sai primeiro; final aponta para o último, o que torna enqueue direto (sem percorrer).',
-  buttons: { withValue: ['enqueue'], without: ['dequeue'] },
+  buttons: { withValue: ['enqueue'], without: ['dequeue', 'destruir'] },
   operations: {
     enqueue: { build: buildEnqueue, needsValue: true },
     dequeue: { build: buildDequeue, needsValue: false },
+    destruir: { build: buildDestruirLista, needsValue: false },
   },
 };

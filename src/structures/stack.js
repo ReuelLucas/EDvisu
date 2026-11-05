@@ -3,6 +3,7 @@ import {
   DESC_ID, addNode, addressOf, createRecorder, descVar, eid, elemVar, getField, intVar, newNode, outVar,
   setField, setPtr, setValor,
 } from '../memoryModel';
+import { buildDestruirPilha } from './valueOps';
 import * as listing from './listings/stack';
 
 const topoEdge = (target) => eid(DESC_ID, 'topo', target);
@@ -136,18 +137,19 @@ export const stack = {
   label: 'Pilha',
   kind: 'pilha',
   initialValues: [40, 30, 20, 10], // do topo para a base
-  initialNote: 'Topo à esquerda: o 40 foi o último a ser empilhado.',
+  initialNote: 'Topo em cima: o 40 foi o último a ser empilhado.',
   listing,
   structs: [
     { key: 'elemento', color: '#374151', cells: [{ type: 'int', name: 'valor' }, { type: 'struct elemento*', name: 'prox' }] },
     { key: 'desc', color: '#1d4ed8', cells: [{ type: 'struct elemento*', name: 'topo' }, { type: 'int', name: 'qtd' }] },
   ],
   structNote: 'Pilha é um ponteiro para a struct pilha (o descritor). O topo é o único ponto de entrada e saída: push e pop mexem só nele.',
-  buttons: { withValue: ['push'], without: ['pop', 'peek', 'size'] },
+  buttons: { withValue: ['push'], without: ['pop', 'peek', 'size', 'destruir'] },
   operations: {
     push: { build: buildPush, needsValue: true },
     pop: { build: buildPop, needsValue: false },
     peek: { build: buildPeek, needsValue: false },
     size: { build: buildSize, needsValue: false },
+    destruir: { build: buildDestruirPilha, needsValue: false },
   },
 };

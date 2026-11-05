@@ -1,0 +1,138 @@
+// GERADO a partir do código C real da disciplina. Não edite à mão: regenere com tools/gen-listings.mjs.
+// Texto verbatim, com o nº da linha no arquivo (n). Cada linha executável tem um `id` que os passos usam
+// para dizer "esta é a linha em execução".
+
+export const SOURCE = {
+  repo: 'PauloHARocha/EDL-2026-1',
+  commit: '8e45a405aef1407eb690c5d8ce0fc49d862bbc8e',
+  path: 'estruturas-de-dados/Tabela-hash/1_tabela_hash.c',
+  file: '1_tabela_hash.c',
+};
+
+export const STRUCTS = {
+  desc: [
+    { n: 7, text: '#define VAZIO -1' },
+    { n: 8, text: '#define REMOVIDO -2' },
+    { n: 9, text: '' },
+    { n: 10, text: 'typedef struct hash {' },
+    { n: 11, text: '    int qtd;' },
+    { n: 12, text: '    int TABLE_SIZE;' },
+    { n: 13, text: '    int *itens;' },
+    { n: 14, text: '} Hash;' },
+  ],
+};
+
+// funções que NÃO vêm do repositório do professor (escritas pelo EDvisu; arquivo-fonte em tools/autoral)
+export const AUTHORED = {"criaHash":"tools/autoral/hash_linear.c","liberaHash":"tools/autoral/hash_linear.c","sondagemLinear":"tools/autoral/hash_linear.c","insereHash_SondagemLinear":"tools/autoral/hash_linear.c","buscaHash_SondagemLinear":"tools/autoral/hash_linear.c","removeHash_SondagemLinear":"tools/autoral/hash_linear.c"};
+
+// funções do repositório cujo NOME foi trocado no EDvisu: { nome usado aqui: nome original }
+export const RENAMED = {};
+
+export const FUNCTIONS = {
+  chaveDivisao: [
+    { n: 15, id: 'sig', text: 'int chaveDivisao(int chave, int TABLE_SIZE) {' },
+    { n: 16, id: null, text: '    // O operador & 0x7FFFFFFF remove o bit de sinal do inteiro.' },
+    { n: 17, id: null, text: '    // Isso garante que o resultado da função seja sempre não negativo, mesmo que a chave seja um número negativo.' },
+    { n: 18, id: null, text: '    // Exemplo:' },
+    { n: 19, id: null, text: '    //  chave = -10 (em binário começa com 1, indicando sinal negativo)' },
+    { n: 20, id: null, text: '    //  chave & 0x7FFFFFFF zera o bit de sinal e resulta no valor positivo equivalente.' },
+    { n: 21, id: null, text: '    // Depois disso, aplicamos o operador módulo (%), que devolve o resto da divisão da chave pelo tamanho da tabela.' },
+    { n: 22, id: null, text: '    // Isso garante que o índice final sempre esteja dentro dos limites do vetor.' },
+    { n: 23, id: 'ret', text: '    return (chave & 0x7FFFFFFF) % TABLE_SIZE;' },
+    { n: 24, id: null, text: '}' },
+  ],
+  criaHash: [
+    { n: 16, id: 'sig', text: 'Hash* criaHash(int TABLE_SIZE) {' },
+    { n: 17, id: 'mallocha', text: '    Hash *ha = malloc(sizeof(Hash));' },
+    { n: 18, id: 'ifha', text: '    if (ha != NULL) {' },
+    { n: 19, id: 'settable', text: '        ha->TABLE_SIZE = TABLE_SIZE;' },
+    { n: 20, id: 'setqtd', text: '        ha->qtd = 0;' },
+    { n: 21, id: 'mallocitens', text: '        ha->itens = malloc(TABLE_SIZE * sizeof(int));' },
+    { n: 22, id: 'ifitens', text: '        if (ha->itens == NULL) {' },
+    { n: 23, id: 'freefail', text: '            free(ha);' },
+    { n: 24, id: 'retnull', text: '            return NULL;' },
+    { n: 25, id: null, text: '        }' },
+    { n: 26, id: 'for', text: '        for (int i = 0; i < TABLE_SIZE; i++) {' },
+    { n: 27, id: 'setvazio', text: '            ha->itens[i] = VAZIO;' },
+    { n: 28, id: null, text: '        }' },
+    { n: 29, id: null, text: '    }' },
+    { n: 30, id: 'ret', text: '    return ha;' },
+    { n: 31, id: null, text: '}' },
+  ],
+  liberaHash: [
+    { n: 33, id: 'sig', text: 'void liberaHash(Hash *ha) {' },
+    { n: 34, id: 'ifnull', text: '    if (ha == NULL)' },
+    { n: 35, id: 'retnull', text: '        return;' },
+    { n: 36, id: null, text: '' },
+    { n: 37, id: 'freeitens', text: '    free(ha->itens);' },
+    { n: 38, id: 'freeha', text: '    free(ha);' },
+    { n: 39, id: null, text: '}' },
+  ],
+  sondagemLinear: [
+    { n: 41, id: 'sig', text: 'int sondagemLinear(int pos, int i, int TABLE_SIZE) {' },
+    { n: 42, id: 'ret', text: '    return (pos + i) % TABLE_SIZE;' },
+    { n: 43, id: null, text: '}' },
+  ],
+  insereHash_SondagemLinear: [
+    { n: 45, id: 'sig', text: 'int insereHash_SondagemLinear(Hash *ha, int valor) {' },
+    { n: 46, id: 'ifguard', text: '    if (ha == NULL || ha->qtd == ha->TABLE_SIZE)' },
+    { n: 47, id: 'retguard', text: '        return 0;' },
+    { n: 48, id: null, text: '' },
+    { n: 49, id: 'pos', text: '    int pos = chaveDivisao(valor, ha->TABLE_SIZE);' },
+    { n: 50, id: 'livreinit', text: '    int livre = -1;' },
+    { n: 51, id: 'for', text: '    for (int i = 0; i < ha->TABLE_SIZE; i++) {' },
+    { n: 52, id: 'novapos', text: '        int novaPos = sondagemLinear(pos, i, ha->TABLE_SIZE);' },
+    { n: 53, id: 'ifslot', text: '        if (ha->itens[novaPos] == VAZIO || ha->itens[novaPos] == REMOVIDO) {' },
+    { n: 54, id: 'iflivre', text: '            if (livre == -1)' },
+    { n: 55, id: 'setlivre', text: '                livre = novaPos;' },
+    { n: 56, id: 'ifbreak', text: '            if (ha->itens[novaPos] == VAZIO)' },
+    { n: 57, id: 'brk', text: '                break;' },
+    { n: 58, id: 'ifdup', text: '        } else if (ha->itens[novaPos] == valor)' },
+    { n: 59, id: 'retdup', text: '            return 0;' },
+    { n: 60, id: null, text: '    }' },
+    { n: 61, id: 'ifsem', text: '    if (livre == -1)' },
+    { n: 62, id: 'retsem', text: '        return 0;' },
+    { n: 63, id: null, text: '' },
+    { n: 64, id: 'setitem', text: '    ha->itens[livre] = valor;' },
+    { n: 65, id: 'qtdinc', text: '    ha->qtd++;' },
+    { n: 66, id: 'ret1', text: '    return 1;' },
+    { n: 67, id: null, text: '}' },
+  ],
+  buscaHash_SondagemLinear: [
+    { n: 69, id: 'sig', text: 'int buscaHash_SondagemLinear(Hash *ha, int valor, int *out) {' },
+    { n: 70, id: 'ifnull', text: '    if (ha == NULL)' },
+    { n: 71, id: 'retnull', text: '        return 0;' },
+    { n: 72, id: null, text: '' },
+    { n: 73, id: 'pos', text: '    int pos = chaveDivisao(valor, ha->TABLE_SIZE);' },
+    { n: 74, id: 'for', text: '    for (int i = 0; i < ha->TABLE_SIZE; i++) {' },
+    { n: 75, id: 'novapos', text: '        int novaPos = sondagemLinear(pos, i, ha->TABLE_SIZE);' },
+    { n: 76, id: 'ifvazio', text: '        if (ha->itens[novaPos] == VAZIO)' },
+    { n: 77, id: 'retvazio', text: '            return 0;' },
+    { n: 78, id: 'ifach', text: '        if (ha->itens[novaPos] == valor) {' },
+    { n: 79, id: 'setout', text: '            *out = novaPos;' },
+    { n: 80, id: 'ret1', text: '            return 1;' },
+    { n: 81, id: null, text: '        }' },
+    { n: 82, id: null, text: '    }' },
+    { n: 83, id: 'retfim', text: '    return 0;' },
+    { n: 84, id: null, text: '}' },
+  ],
+  removeHash_SondagemLinear: [
+    { n: 86, id: 'sig', text: 'int removeHash_SondagemLinear(Hash *ha, int valor) {' },
+    { n: 87, id: 'ifnull', text: '    if (ha == NULL)' },
+    { n: 88, id: 'retnull', text: '        return 0;' },
+    { n: 89, id: null, text: '' },
+    { n: 90, id: 'pos', text: '    int pos = chaveDivisao(valor, ha->TABLE_SIZE);' },
+    { n: 91, id: 'for', text: '    for (int i = 0; i < ha->TABLE_SIZE; i++) {' },
+    { n: 92, id: 'novapos', text: '        int novaPos = sondagemLinear(pos, i, ha->TABLE_SIZE);' },
+    { n: 93, id: 'ifvazio', text: '        if (ha->itens[novaPos] == VAZIO)' },
+    { n: 94, id: 'retvazio', text: '            return 0;' },
+    { n: 95, id: 'ifach', text: '        if (ha->itens[novaPos] == valor) {' },
+    { n: 96, id: 'setrem', text: '            ha->itens[novaPos] = REMOVIDO;' },
+    { n: 97, id: 'qtddec', text: '            ha->qtd--;' },
+    { n: 98, id: 'ret1', text: '            return 1;' },
+    { n: 99, id: null, text: '        }' },
+    { n: 100, id: null, text: '    }' },
+    { n: 101, id: 'retfim', text: '    return 0;' },
+    { n: 102, id: null, text: '}' },
+  ],
+};

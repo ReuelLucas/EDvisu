@@ -3,8 +3,13 @@ import { createList, idleSnapshot } from './memoryModel';
 
 const PLAY_INTERVAL_MS = 900;
 
-function makeInitialModel(structure) {
-  const list = createList(structure.kind, structure.initialValues);
+function makeInitialModel(structure, empty = false) {
+  // estruturas com vetor trazem create()/idle(); as encadeadas usam o modelo de nós (createList)
+  if (structure.create) {
+    const mem = structure.create(empty);
+    return { list: mem, steps: [structure.idle(mem)] };
+  }
+  const list = createList(structure.kind, empty ? [] : structure.initialValues);
   return { list, steps: [idleSnapshot(list)] };
 }
 
@@ -33,8 +38,9 @@ export function useStepper(structure) {
     [structure],
   );
 
-  const reset = useCallback(() => {
-    setModel(makeInitialModel(structure));
+  // empty = true: recomeça com a estrutura vazia (recém-criada, como após criar_lista())
+  const reset = useCallback((empty = false) => {
+    setModel(makeInitialModel(structure, empty === true));
     setIndex(0);
     setPlaying(false);
   }, [structure]);
@@ -74,6 +80,7 @@ export function useStepper(structure) {
   }, [isPlaying, index]);
 
   return {
+    destroyed: Boolean(model.list.destroyed),
     snapshot: steps[index],
     previousSnapshot: index > 0 ? steps[index - 1] : null,
     index,

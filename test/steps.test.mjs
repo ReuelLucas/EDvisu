@@ -59,6 +59,31 @@ function checkSteps(s, op, result) {
 }
 
 // ---- modelos de referência ----
+const removeValor = (a, v) => { const i = a.indexOf(v); return i < 0 ? a : [...a.slice(0, i), ...a.slice(i + 1)]; };
+const same = (a) => a;
+const COMMON = { busca_valor: same, remove_valor: removeValor, destruir: same };
+
+// checagens específicas das novas funções
+function checkValueOp(s, op, start, v, r, freedBefore = 0) {
+  if (op === 'busca_valor') {
+    const idx = start.indexOf(v);
+    if (idx >= 0) {
+      const st = r.steps.find((x) => x.line === 'setpos');
+      assert.ok(st, `${s.id}.busca_valor: devia achar ${v} em ${JSON.stringify(start)}`);
+      assert.equal(st.vars.find((x) => x.name === 'pos').value, idx, `${s.id}.busca_valor: posição errada`);
+    } else {
+      assert.ok(r.steps.some((x) => x.line === 'retnao' || x.line === 'retguard'), `${s.id}.busca_valor: devia dar "não encontrado"`);
+      assert.ok(!r.steps.some((x) => x.line === 'setpos'));
+    }
+  }
+  if (op === 'destruir') {
+    assert.ok(r.list.destroyed, `${s.id}.destruir: descritor não liberado`);
+    assert.equal(Object.keys(r.list.nodes).length, 0, `${s.id}.destruir: sobrou nó vivo`);
+    assert.equal(r.list.freed.length - freedBefore, start.length, `${s.id}.destruir: nº de free() != nº de nós`);
+    assert.ok(r.steps.at(-1).vars[0].dangling, 'li do chamador deveria ficar pendente');
+  }
+}
+
 const REF = {
   lista: {
     inserir_inicio: (a, v) => [v, ...a],
@@ -78,21 +103,28 @@ const REF = {
   pilha: { push: (a, v) => [v, ...a], pop: (a) => a.slice(1), peek: (a) => a, size: (a) => a },
   fila: { enqueue: (a, v) => [...a, v], dequeue: (a) => a.slice(1) },
 };
+for (const k of Object.keys(REF)) Object.assign(REF[k], COMMON);
 
 let seed = 12345;
 const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
 
-for (const s of STRUCTURES) {
+const LINKED = STRUCTURES.filter((x) => x.view === 'linked');
+for (const s of LINKED) {
   const ops = Object.keys(s.operations);
   // 1) cada operação, de lista vazia, com 1 nó e com vários
-  for (const start of [[], [7], [1, 2, 3, 4]]) {
+  for (const start of [[], [7], [1, 2, 3, 4], [5, 9, 5]]) {
     for (const op of ops) {
-      const list = createList(s.kind, start);
-      checkInvariants(s, list);
-      const r = s.operations[op].build(list, 99);
-      checkSteps(s, op, r);
-      checkInvariants(s, r.list);
-      assert.deepEqual(values(r.list), REF[s.kind][op](start, 99), `${s.id}.${op} de ${JSON.stringify(start)}`);
+      for (const v of [99, start[0] ?? 99, start.at(-1) ?? 99, start[1] ?? 99]) {
+        const list = createList(s.kind, start);
+        checkInvariants(s, list);
+        const r = s.operations[op].build(list, v);
+        checkSteps(s, op, r);
+        checkValueOp(s, op, start, v, r, 0);
+        if (op !== 'destruir') {
+          checkInvariants(s, r.list);
+          assert.deepEqual(values(r.list), REF[s.kind][op](start, v), `${s.id}.${op}(${v}) de ${JSON.stringify(start)}`);
+        }
+      }
     }
   }
   // 2) sequências aleatórias encadeadas
@@ -101,9 +133,11 @@ for (const s of STRUCTURES) {
     let ref = [...s.initialValues];
     for (let k = 0; k < 25; k += 1) {
       const op = ops[rnd(ops.length)];
-      const v = rnd(100);
+      const v = rnd(6);
       const r = s.operations[op].build(list, v);
       checkSteps(s, op, r);
+      checkValueOp(s, op, ref, v, r, list.freed.length);
+      if (op === 'destruir') break; // estrutura liberada: nada mais a fazer
       ref = REF[s.kind][op](ref, v);
       list = r.list;
       checkInvariants(s, list);
@@ -118,4 +152,4 @@ for (const s of STRUCTURES) {
   assert.ok(r.steps.at(-1).crash, 'deveria registrar o segfault');
   assert.deepEqual(values(r.list), [5]);
 }
-console.log(`ok: ${checked} snapshots verificados em ${STRUCTURES.length} estruturas`);
+console.log(`ok: ${checked} snapshots verificados em ${LINKED.length} estruturas`);

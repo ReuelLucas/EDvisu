@@ -25,6 +25,12 @@ export const STRUCTS = {
   ],
 };
 
+// funções que NÃO vêm do repositório do professor (escritas pelo EDvisu; arquivo-fonte em tools/autoral)
+export const AUTHORED = {"destruir":"tools/autoral/fila.c"};
+
+// funções do repositório cujo NOME foi trocado no EDvisu: { nome usado aqui: nome original }
+export const RENAMED = {};
+
 export const FUNCTIONS = {
   enqueue: [
     { n: 25, id: 'sig', text: 'int enqueue(Fila f, int dado){' },
@@ -56,6 +62,19 @@ export const FUNCTIONS = {
     { n: 50, id: 'free', text: '    free(aux);' },
     { n: 51, id: 'qtddec', text: '    f->qtd--;' },
     { n: 52, id: 'ret0', text: '    return 0;' },
+    { n: 53, id: null, text: '}' },
+  ],
+  destruir: [
+    { n: 43, id: 'sig', text: 'void destruir(Fila f){' },
+    { n: 44, id: 'ifli', text: '    if(f != NULL){' },
+    { n: 45, id: 'noinit', text: '        Elem* aux = f->inicio;' },
+    { n: 46, id: 'while', text: '        while(aux != NULL){' },
+    { n: 47, id: 'proxinit', text: '            Elem* prox = aux->prox;' },
+    { n: 48, id: 'free', text: '            free(aux);' },
+    { n: 49, id: 'avanca', text: '            aux = prox;' },
+    { n: 50, id: null, text: '        }' },
+    { n: 51, id: 'freedesc', text: '        free(f);' },
+    { n: 52, id: null, text: '    }' },
     { n: 53, id: null, text: '}' },
   ],
 };
